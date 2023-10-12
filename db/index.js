@@ -1,15 +1,16 @@
 const { uid } = require("uid");
-
+const axios = require("axios");
 class Roster {
   constructor() {}
 
-  addStudent({ name, location }) {
+  async addStudent({ name, location }) {
     // unique identifier
     const id = uid();
     this[id] = {
       id,
       name,
       location,
+      profilePic: await this.#getPhoto(location),
     };
 
     return this[id];
@@ -33,7 +34,7 @@ class Roster {
     return results;
   }
 
-  findOneAndUpdate(id, { name, location }) {
+  async findOneAndUpdate(id, { name, location }) {
     const student = this.getOneStudent(id);
 
     if (student) {
@@ -43,6 +44,7 @@ class Roster {
 
       if (location) {
         student.location = location;
+        student.profilePic = await this.#getPhoto(location);
       }
     }
 
@@ -51,6 +53,22 @@ class Roster {
 
   findOneAndDelete(id) {
     delete this[id];
+  }
+
+  async #getPhoto(location) {
+    const unsplashURL = `https://api.unsplash.com/photos/random?client_id=${process.env.UNSPLASH_API_KEY}&query=${location}`;
+
+    try {
+      const { data } = await axios.get(unsplashURL);
+
+      if (data && data.urls.small) {
+        return data.urls.small;
+      } else {
+        return "https://placehold.jp/50x50.png";
+      }
+    } catch (error) {
+      return "https://placehold.jp/50x50.png";
+    }
   }
 }
 

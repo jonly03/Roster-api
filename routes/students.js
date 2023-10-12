@@ -22,8 +22,15 @@ Router.get("/", (req, res) => {
       POST /api/students
       {name, location}
   */
-Router.post("/", validateFields, (req, res) => {
-  res.send(rosterDB.addStudent(req.body));
+Router.post("/", validateFields, async (req, res) => {
+  try {
+    const newStudent = await rosterDB.addStudent(req.body);
+    res.send(newStudent);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "our internal photo retrieval service crashed" });
+  }
 });
 
 /*
@@ -31,7 +38,7 @@ Router.post("/", validateFields, (req, res) => {
       PUT /api/students/<id>
       {name?, location?}
   */
-Router.put("/:id", (req, res) => {
+Router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { name, location } = req.body;
 
@@ -41,13 +48,19 @@ Router.put("/:id", (req, res) => {
       .json({ error: "missing new name or location to update with" });
   }
 
-  const student = rosterDB.findOneAndUpdate(id, req.body);
+  try {
+    const student = await rosterDB.findOneAndUpdate(id, req.body);
 
-  if (!student) {
-    return res.status(404).json({ error: `no student with id:${id}` });
+    if (!student) {
+      return res.status(404).json({ error: `no student with id:${id}` });
+    }
+
+    return res.send(student);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "our internal photo retrieval service crashed" });
   }
-
-  return res.send(student);
 });
 
 /*
